@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.board.mappers.member">
+ 
+ 	<!-- 회원 가입 -->
+ 	<insert id="register" parameterType="com.board.domain.MemberVO">
+ 		insert into board.myMember(userId, userPw, userName)
+ 			values(#{userId}, #{userPw}, #{userName})
+ 	</insert>
+ 	
+ 	<!-- 로그인 -->
+ 	<select id="login" resultType="com.board.domain.MemberVO">
+ 		select
+ 			userId, userName, userPw
+ 		from
+ 			board.myMember
+ 		where userId = #{userId}
+ 			and userPw = #{userPw}
+ 	</select>
+ 	
+ 	<!-- 로그인 - 암호화 적용 -->
+ 	<select id="loginBcrypt" resultType="com.board.domain.MemberVO">
+ 		select
+ 			userId, userName, userPw
+ 		from
+ 			board.myMember
+ 		where userId = #{userId}
+ 	</select>
+ 	
+ 	<!-- 회원정보 수정 -->
+ 	<update id="modify">
+ 		update board.myMember
+ 			set
+ 				userPw = #{userPw}
+ 			where userName = #{userName}
+ 	</update>
+ 	
+ 	<!-- 회원정보 수정 - 암호화 적용 -->
+ 	<update id="modifyBcrypt">
+ 		update board.myMember
+ 			set
+ 				userPw = #{userPw}
+ 			where userName = #{userName}
+ 	</update>
+ 	
+ 	<!-- 회원탈퇴 -->
+ 	<delete id="delete">
+ 		delete from board.myMember
+ 			where userId = #{userId}
+ 				and userPw = #{userPw}
+ 	</delete>
+ 	
+ 	<!-- 회원탈퇴 - 암호화 적용-->
+ 	<delete id="deleteBcrypt">
+ 		delete from board.myMember
+ 			where userId = #{userId}
+ 	</delete>
+ 	
+ 	<!-- 아이디 확인 -->
+ 	<select id="idCheck" resultType="com.board.domain.MemberVO">
+ 		select 
+ 			userId
+ 		from
+ 			board.myMember
+ 		where userId = #{userId}
+ 	</select>
+ 
+ </mapper>

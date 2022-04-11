@@ -1,0 +1,158 @@
+package com.board.controller;
+
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.board.domain.BoardVO;
+import com.board.domain.Page;
+import com.board.domain.ReplyVO;
+import com.board.service.BoardService;
+import com.board.service.ReplyService;
+
+@Controller
+@RequestMapping("/board/*")
+public class BoardController {
+
+	@Inject
+	private BoardService service;
+	
+	@Inject
+	private ReplyService replyService;
+
+	// 게시물 목록
+	@RequestMapping(value = "/list", method = RequestMethod.GET)
+	public void getList(Model model) throws Exception {
+
+		List<BoardVO> list = null;
+		list = service.list();
+
+		model.addAttribute("list", list);
+	}
+
+	// 게시물 작성
+	@RequestMapping(value = "/write", method = RequestMethod.GET)
+	public void getWrite(HttpSession session, Model model) throws Exception {
+		Object loginInfo = session.getAttribute("member");
+		
+		// 컨트롤러에서 세션값을 가져와서 로그인 여부 확인
+		if(loginInfo == null) {
+			model.addAttribute("msg", false);
+		}
+	}
+	
+	// 게시물 작성 (POST 메서드)
+	@RequestMapping(value = "/write", method = RequestMethod.POST)
+	public String postWrite(BoardVO vo) throws Exception {
+		service.write(vo);
+		
+		// 모든 작업을 마치고 /board/list로 이동
+		return "redirect:/board/list";
+	}
+	
+	// 게시물 조회
+	@RequestMapping(value = "/view", method = RequestMethod.GET)
+	public void getView(@RequestParam("bno") int bno, Model model) throws Exception {
+	// RequestParam([문자열])을 이용하면 주소에 있는 특정한 값을 가져올 수 있음.
+	// 주소에서 bno를 찾아 그 값을 int bno에 넣어줌.
+		
+		// BoardVO를 이용하여 서비스에서 데이터를 받음
+		BoardVO vo = service.view(bno);
+		
+		// model을 이용하여 view에 데이터를 넘겨줌.
+		// 넘겨주는 모델의 이름은 view
+		model.addAttribute("view", vo);
+		
+		// 댓글 조회
+		List<ReplyVO> reply = null;
+		reply = replyService.list(bno);
+		model.addAttribute("reply", reply);
+	}
+	
+	// 게시물 수정
+	@RequestMapping(value = "/modify", method = RequestMethod.GET)
+	public void getModify(@RequestParam("bno") int bno, Model model) throws Exception {
+		
+		BoardVO vo = service.view(bno);
+		
+		model.addAttribute("view", vo);
+	}
+	
+	// 게시물 수정
+	@RequestMapping(value = "/modify", method = RequestMethod.POST)
+	public String postModify(BoardVO vo) throws Exception {
+		
+		service.modify(vo);
+		
+		return "redirect:/board/view?bno=" + vo.getBno();
+	}
+	
+	// 게시물 삭제
+	@RequestMapping(value = "/delete", method = RequestMethod.GET)
+	public String getDelete(@RequestParam("bno") int bno) throws Exception {
+		
+		service.delete(bno);
+		
+		return "redirect:/board/list";
+	}
+	
+	// 게시물 목록 + 페이징 추가
+		@RequestMapping(value = "/listPage", method = RequestMethod.GET)
+		public void getListPage(Model model, @RequestParam("num") int num) throws Exception {
+
+			Page page = new Page();
+			
+			page.setNum(num);
+			page.setCount(service.count());
+			
+			List<BoardVO> list = null;
+			list = service.listPage(page.getDisplayPost(), page.getPostNum());
+			
+			model.addAttribute("list", list);
+			
+			// page의 데이터 전부를 뷰(view)로 전달
+			model.addAttribute("page", page);
+			
+			model.addAttribute("select", num);
+		}
+		
+	// 게시물 목록 + 페이징 추가 + 검색
+		@RequestMapping(value = "/listPageSearch", method = RequestMethod.GET)
+		public void getListPageSearch(Model model, @RequestParam("num") int num,
+				// value는 받고자할 데이터의 키, required는 해당데이터의 필수여부, defaultValue는 데이터가 들어오지 않았을 경우 대신할 기본
+				@RequestParam(value = "searchType", required = false, defaultValue = "title") String searchType, 
+				@RequestParam(value = "keyword", required = false, defaultValue = "") String keyword) throws Exception {
+
+			Page page = new Page();
+					
+			page.setNum(num);
+			//page.setCount(service.count());
+			page.setCount(service.searchCount(searchType, keyword));
+			
+			// 검색 타입과 검색어
+			//page.setSearchTypeKeyword(searchType, keyword);
+			page.setSearchType(searchType);
+			page.setKeyword(keyword);
+					
+			List<BoardVO> list = null;
+			//list = service.listPage(page.getDisplayPost(), page.getPostNum());
+			list = service.listPageSearch(page.getDisplayPost(), page.getPostNum(), searchType, keyword);
+					
+			model.addAttribute("list", list);
+					
+			// page의 데이터 전부를 뷰(view)로 전달
+			model.addAttribute("page", page);
+			model.addAttribute("select", num);
+			
+			//model.addAttribute("searchType", searchType);
+			//model.addAttribute("keyword", keyword);
+			
+		}
+}
